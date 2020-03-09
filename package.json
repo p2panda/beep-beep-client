@@ -1,0 +1,62 @@
+{
+  "name": "beep-beep-client",
+  "version": "0.1.0",
+  "description": "Proof-of-concept client using bamboo for beep-beep",
+  "main": "./src/index.js",
+  "private": true,
+  "contributors": [
+    "adzialocha"
+  ],
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/adzialocha/beep-beep-client.git"
+  },
+  "scripts": {
+    "build": "npm run clear && npm run prepare && cross-env NODE_ENV=production webpack --mode production --progress",
+    "clear": "rimraf ./build",
+    "lint": "npm run lint:css && npm run lint:js",
+    "lint:css": "stylelint './src/**/*.js'",
+    "lint:js": "eslint --ignore-path .gitignore ./",
+    "prepare": "mkdirp ./build",
+    "serve": "npm run clear && npm run prepare && cross-env NODE_ENV=development webpack-dev-server",
+    "start": "npm run serve",
+    "watch": "cross-env NODE_ENV=development webpack --mode development --watch --progress"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.4",
+    "@babel/node": "^7.8.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.8.3",
+    "@babel/preset-env": "^7.8.4",
+    "@wasm-tool/wasm-pack-plugin": "1.0.1",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "cross-env": "^7.0.0",
+    "css-loader": "^3.4.2",
+    "dotenv": "^8.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-loader": "^3.0.3",
+    "eslint-plugin-prettier": "^3.1.2",
+    "file-loader": "^5.0.2",
+    "html-webpack-plugin": "^3.2.0",
+    "mkdirp": "^1.0.3",
+    "prettier": "^1.19.1",
+    "rimraf": "^3.0.1",
+    "style-loader": "^1.1.3",
+    "stylelint": "^13.0.0",
+    "stylelint-config-prettier": "^8.0.1",
+    "stylelint-config-standard": "^19.0.0",
+    "stylelint-order": "^4.0.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "dependencies": {
+    "graphql-request": "^1.8.2",
+    "isomorphic-fetch": "^2.2.1",
+    "luxon": "^1.22.0"
+  }
+}

@@ -1,0 +1,22 @@
+[package]
+name = "beep-beep-client"
+version = "0.1.0"
+authors = ["Piet Geursen <pietgeursen@gmail.com>", "Andreas Dzialocha <x09@adz.garden>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["wee_alloc"]
+
+[dependencies]
+bamboo-core = { git = "https://github.com/pietgeursen/bamboo-rs", branch = "bamboo-commit-388bafe" }
+ed25519-dalek = { git = "https://github.com/dalek-cryptography/ed25519-dalek", rev = "3a91019", default-features = false, features = ["u64_backend", "alloc", "serde"] }
+rand = { version = "0.7.0", features = ["wasm-bindgen"] }
+serde = { version = "1.0.90", features = ["derive"] }
+wasm-bindgen = { version = "0.2" , features = ["serde-serialize"] }
+wee_alloc = { version = "0.4.2", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2"
