@@ -111,7 +111,7 @@ async function sendMessage() {
    * @param {Uint8Array | undefined} backlink
    * @returns {number}
    */
-  encodeBambooEntry(
+  const size = encodeBambooEntry(
     entryBytes,
     keypair.public,
     keypair.secret,
@@ -124,7 +124,7 @@ async function sendMessage() {
   );
 
   // Convert entry & payload to hex strings
-  const encodedEntry = toHexString(entryBytes);
+  const encodedEntry = toHexString(entryBytes).slice(0, size * 2);
   const encodedPayload = toHexString(payloadBytes);
 
   // Send GraphQL request to create message
