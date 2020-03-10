@@ -1,9 +1,7 @@
-import { request } from 'graphql-request';
-
+import request from './graphql';
 import { getItem, hasItem, setItem } from './storage';
-import { toHexString, toBytesArray } from './utils';
+import { toHexString, fromHexString, toBytesArray } from './utils';
 
-const BAMBOO_ENDPOINT = 'http://localhost:8000/graphql';
 const ENTER_KEYNAME = 'Enter';
 const STORAGE_KEYPAIR = 'keypair';
 const LOG_ID = 0;
@@ -22,10 +20,14 @@ const elements = ['key', 'message', 'messageSubmit'].reduce((acc, id) => {
 }, {});
 
 async function initialize() {
+  setDisabled(['message', 'messageSubmit'], true);
+
+  // Get methods and classes from wasm library
   const wasm = import('../build/wasm');
 
   try {
     const bamboo = await wasm;
+
     BambooKeypair = bamboo.Keypair;
     encodeBambooEntry = bamboo.encode;
   } catch (error) {
@@ -47,20 +49,15 @@ async function initialize() {
   keypair.secret = new Uint8Array(keypairFromStorage.secret);
 
   elements.key.value = toHexString(keypair.public);
+
+  // Enable interface as we are ready now
+  setDisabled(['message', 'messageSubmit'], false);
 }
 
 function setDisabled(ids, status) {
   ids.forEach(id => {
     elements[id].disabled = status;
   });
-}
-
-async function graphQLRequest(query, variables) {
-  try {
-    await request(BAMBOO_ENDPOINT, query, variables);
-  } catch (error) {
-    console.error('GraphQL error response:', error.response.errors[0].message);
-  }
 }
 
 async function sendMessage() {
@@ -70,9 +67,11 @@ async function sendMessage() {
 
   setDisabled(['message', 'messageSubmit'], true);
 
+  const encodedAuthor = toHexString(keypair.public);
+
   // Convert payload to bytes
   const payload = elements.message.value;
-  const payloadBytes = [...Buffer.from(payload)];
+  const payloadBytes = toBytesArray(payload);
 
   // Get last sequence number, lipmaa and backlink entries from
   // server first before we can create a new entry
@@ -81,16 +80,25 @@ async function sendMessage() {
   let backlinkEntryBytes = undefined;
 
   try {
-    // @TODO: Implement this on the server side
-    const query = ``;
-    const variables = {};
+    const query = `{
+      nextMessageArguments(author: "${encodedAuthor}", logId: ${LOG_ID}) {
+        encodedEntryLipmaa
+        encodedEntryBacklink
+        lastSeqNum
+      }
+    }`;
 
-    const data = await graphQLRequest(query, variables);
+    const { nextMessageArguments: data } = await request(query);
 
-    lastSeqNum = data.lastSeqNum;
-    lipmaaEntryBytes = toBytesArray(data.encodedEntryLipmaa);
-    backlinkEntryBytes = toBytesArray(data.encodedEntryBacklink);
-  } catch {
+    // We already have a previous entry, otherwise take defaults
+    if (data.encodedEntryBacklink && data.lastSeqNum > 0) {
+      lastSeqNum = data.lastSeqNum;
+      backlinkEntryBytes = fromHexString(data.encodedEntryBacklink);
+      lipmaaEntryBytes = fromHexString(data.encodedEntryLipmaa);
+    }
+  } catch (error) {
+    console.error(error);
+
     // Stop here as we can't post anything without this data
     setDisabled(['message', 'messageSubmit'], false);
     return;
@@ -100,31 +108,43 @@ async function sendMessage() {
   const isEndOfFeed = false;
 
   /**
-   * @param {Uint8Array} buffer
-   * @param {Uint8Array} public_key
-   * @param {Uint8Array} secret_key
-   * @param {BigInt} log_id
-   * @param {Uint8Array} payload
-   * @param {boolean} is_end_of_feed
-   * @param {BigInt} last_seq_num
-   * @param {Uint8Array | undefined} lipmaa_entry
-   * @param {Uint8Array | undefined} backlink
-   * @returns {number}
+   * Encode the bamboo entry
+   *
+   * @param {Uint8Array} bufferBytes
+   * @param {Uint8Array} publicKeyBytes
+   * @param {Uint8Array} secretKeyBytes
+   * @param {BigInt} logId
+   * @param {Uint8Array} payloadBytes
+   * @param {boolean} isEndOfFeed
+   * @param {BigInt} lastSeqNum
+   * @param {Uint8Array | undefined} lipmaaEntryBytes
+   * @param {Uint8Array | undefined} backlinkEntryBytes
+   * @returns {number} entrySize
    */
-  const size = encodeBambooEntry(
-    entryBytes,
-    keypair.public,
-    keypair.secret,
-    BigInt(LOG_ID),
-    payloadBytes,
-    isEndOfFeed,
-    BigInt(lastSeqNum),
-    lipmaaEntryBytes,
-    backlinkEntryBytes,
-  );
+  let entrySize;
+
+  try {
+    entrySize = encodeBambooEntry(
+      entryBytes,
+      keypair.public,
+      keypair.secret,
+      BigInt(LOG_ID),
+      payloadBytes,
+      isEndOfFeed,
+      BigInt(lastSeqNum),
+      lipmaaEntryBytes,
+      backlinkEntryBytes,
+    );
+  } catch (error) {
+    console.error('Bamboo error:', error);
+
+    // Stop here as we can't post anything without this data
+    setDisabled(['message', 'messageSubmit'], false);
+    return;
+  }
 
   // Convert entry & payload to hex strings
-  const encodedEntry = toHexString(entryBytes).slice(0, size * 2);
+  const encodedEntry = toHexString(entryBytes.slice(0, entrySize));
   const encodedPayload = toHexString(payloadBytes);
 
   // Send GraphQL request to create message
@@ -143,10 +163,10 @@ async function sendMessage() {
       },
     };
 
-    await graphQLRequest(query, variables);
+    await request(query, variables);
     elements.message.value = '';
-  } catch {
-    // Do nothing
+  } catch (error) {
+    console.error(error);
   }
 
   setDisabled(['message', 'messageSubmit'], false);
