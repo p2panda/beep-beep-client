@@ -57,7 +57,7 @@ async function initialize() {
 }
 
 function setDisabled(ids, status) {
-  ids.forEach(id => {
+  ids.forEach((id) => {
     elements[id].disabled = status;
   });
 }
@@ -185,7 +185,7 @@ elements.messageSubmit.addEventListener('click', async () => {
   await sendMessage();
 });
 
-elements.message.addEventListener('keydown', async event => {
+elements.message.addEventListener('keydown', async (event) => {
   if (event.key === ENTER_KEYNAME) {
     await sendMessage();
   }
