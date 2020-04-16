@@ -55,6 +55,7 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "cbor": "^5.0.2",
     "graphql-request": "^1.8.2",
     "isomorphic-fetch": "^2.2.1",
     "luxon": "^1.22.0"

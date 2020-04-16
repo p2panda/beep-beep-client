@@ -1,6 +1,8 @@
+import cbor from 'cbor';
+
 import request from './graphql';
 import { getItem, hasItem, setItem } from './storage';
-import { toHexString, fromHexString, toBytesArray } from './utils';
+import { toHexString, fromHexString } from './utils';
 
 const ENTER_KEYNAME = 'Enter';
 const STORAGE_KEYPAIR = 'keypair';
@@ -69,9 +71,16 @@ async function sendMessage() {
 
   const encodedAuthor = toHexString(keypair.public);
 
-  // Convert payload to bytes
-  const payload = elements.message.value;
-  const payloadBytes = toBytesArray(payload);
+  // Create a message with right format
+  const message = {
+    category: 'mascot',
+    name: elements.message.value,
+    species: 'elephant',
+    year_of_birth: 2020,
+  };
+
+  // Convert payload to CBOR
+  const payloadBytes = cbor.encode(message);
 
   // Get last sequence number, lipmaa and backlink entries from
   // server first before we can create a new entry
