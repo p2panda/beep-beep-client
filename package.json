@@ -10,7 +10,7 @@
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "git://github.com/adzialocha/beep-beep-client.git"
+    "url": "git://github.com/p2panda/beep-beep-client.git"
   },
   "scripts": {
     "build": "npm run clear && npm run prepare && cross-env NODE_ENV=production webpack --mode production --progress",
